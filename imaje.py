@@ -201,6 +201,13 @@ class Printer(object):
             False = failure
         """
 
+        if jet_id > self.get_number_of_available_jets()[1]:
+            print(
+                "Attention, it seems that you are trying to set the external "
+                "variables from a non-existent jet! This can lead to dramatic "
+                "problems!"
+            )
+
         variables_hex = ""
         content_length = 1
 
@@ -241,9 +248,16 @@ class Printer(object):
             True = success\n
             False = failure
 
-        counter : int, None
+        counter : int
             Returns the counter for the respective printhead
         """
+
+        if jet_id > self.get_number_of_available_jets()[1]:
+            print(
+                "Attention, it seems that you are trying to get the jet "
+                "counter of a non-existent jet. This can lead to "
+                "unpredictable problems."
+            )
 
         response = self.send_command(
             Utils.calculate_checksum(
@@ -255,7 +269,7 @@ class Printer(object):
             counter_data = Utils.hex_to_text("".join(response[4:13]))
             return True, int(counter_data)
         else:
-            return False, None
+            return False, 0
 
     def reset_jet_counter(self, jet_id: int) -> int:
         """
@@ -275,6 +289,13 @@ class Printer(object):
             True = success\n
             False = failure
         """
+
+        if jet_id > self.get_number_of_available_jets()[1]:
+            print(
+                "Attention, it seems that you are trying to reset the jet "
+                "counter of a non-existent jet. This can lead to "
+                "unpredictable problems."
+            )
 
         return Utils.extract_response_code(
             self.send_command(
@@ -305,6 +326,12 @@ class Printer(object):
         jet_status : str, None
             Returns the status of the jet
         """
+
+        if jet_id > self.get_number_of_available_jets()[1]:
+            print(
+                "Attention, it seems that you are trying to get the status of "
+                "a non-existent jet. This can lead to unpredictable problems."
+            )
 
         available_status = {
             "00": "Jet stopped",
@@ -358,6 +385,39 @@ class Printer(object):
 
         if Utils.extract_response_code(response):
             return True, float(response[4]) / 10
+        else:
+            return False, None
+
+    def get_number_of_available_jets(self) -> list:
+        """
+        Get the number the jets currently available
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        return_code : bool
+            Returns whether the command was successfully executed or not.
+
+            True = success\n
+            False = failure
+
+        number_of_jets : int, None
+            Returns the number of jets. Normally a number between 1-4
+        """
+
+        count = 0
+        printer_faults = self.get_printer_faults()
+
+        if printer_faults[0]:
+            for key, value in printer_faults[1].items():
+                if "not_present" in key:
+                    if int(value) == 0:
+                        count += 1
+
+            return True, count
         else:
             return False, None
 
